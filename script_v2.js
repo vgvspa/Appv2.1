@@ -320,10 +320,6 @@ function retakePhoto() {
   document.getElementById("photo-placeholder").style.display = "flex";
   document.getElementById("btn-retake").style.display = "none";
 }
-
-// ============================================================
-// ENVÍO DE ENTREGA (ONLINE + OFFLINE)
-// ============================================================
 // ============================================================
 // ENVÍO DE ENTREGA (ONLINE + OFFLINE) — VERSIÓN FINAL
 // ============================================================
@@ -344,11 +340,17 @@ async function submitEntrega() {
     alert("Por favor selecciona el estado de la entrega.");
     return;
   }
+  const tipoDocumento = document.getElementById("tipoDocumento").value;
+if (!tipoDocumento) {
+  alert("Por favor selecciona si es guía o factura.");
+  return;
+}
 
   const payload = {
     accion: "registrarEntrega",
     guia,
     estado,
+    tipoDocumento,
     usuario: usuarioActivo.nombre,
     rol: usuarioActivo.rol,
     fecha: new Date().toLocaleDateString("es-CL"),
@@ -402,6 +404,19 @@ async function submitEntrega() {
   actualizarBadgePendientes();
 }
 
+const tipoDocumento = document.getElementById("tipoDocumento").value;
+
+const data = {
+    accion: "registrarentrega",
+    usuario: usuario,
+    patente: patente,
+    numero: numero,
+    estado: estado,
+    foto: fotoBase64,
+    tipoDocumento: tipoDocumento
+};
+
+
 // ============================================================
 // PANTALLA DE ÉXITO
 // ============================================================
@@ -440,4 +455,17 @@ async function actualizarBadgePendientes() {
   } catch (err) {
     console.error("Error al actualizar badge:", err);
   }
+}
+function seleccionarTipo(tipo) {
+    document.getElementById("tipoDocumento").value = tipo;
+
+    document.querySelectorAll(".btn-tipo-doc").forEach(btn => {
+        btn.classList.remove("selected");
+    });
+
+    if (tipo === "guia") {
+        document.querySelector(".btn-tipo-doc.guia").classList.add("selected");
+    } else {
+        document.querySelector(".btn-tipo-doc.factura").classList.add("selected");
+    }
 }

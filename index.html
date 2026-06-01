@@ -131,8 +131,8 @@
       </div>
     </div>
   </div>
+   <!-- ===================== PANTALLA: ENTREGAS ===================== -->
 
-  <!-- ===================== PANTALLA: ENTREGAS ===================== -->
   <div id="screen-entregas" class="screen">
     <div class="app-header">
       <button class="btn-back" onclick="goBack('menu')" title="Volver">
@@ -146,6 +146,21 @@
     </div>
 
     <div class="app-body" id="form-body">
+
+<div class="tipo-doc-container">
+    <h3>Seleccione el tipo de documento</h3>
+
+    <button class="btn-tipo-doc guia" onclick="seleccionarTipo('guia')">
+        📦 Guía de despacho
+    </button>
+
+    <button class="btn-tipo-doc factura" onclick="seleccionarTipo('factura')">
+        🧾 Factura
+    </button>
+
+    <input type="hidden" id="tipoDocumento">
+</div>
+ 
 
       <!-- Número de guía -->
       <div class="field-section">
@@ -216,5 +231,6 @@
     </div>
   </div>
   <script src="script_v2.js"></script>
-</body>  
+</body>
+  
 </html>

@@ -454,3 +454,32 @@ html, body {
 .estado-box:not(.selected) {
   opacity: 0.6;
 }
+.tipo-doc-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.btn-tipo-doc {
+    width: 90%;
+    padding: 20px;
+    margin: 10px 0;
+    font-size: 22px;
+    font-weight: bold;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    color: white;
+}
+
+.btn-tipo-doc.guia {
+    background-color: #1A4B8C;
+}
+
+.btn-tipo-doc.factura {
+    background-color: #FF9800;
+}
+
+.btn-tipo-doc.selected {
+    outline: 4px solid #00e676;
+    transform: scale(1.03);
+}
