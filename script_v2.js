@@ -469,3 +469,5 @@ function seleccionarTipo(tipo) {
         document.querySelector(".btn-tipo-doc.factura").classList.add("selected");
     }
 }
+
+
