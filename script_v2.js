@@ -1,190 +1,45 @@
 // ============================================================
 // VGV SpA — Portal de Operaciones (FRONTEND)
-// script_v2.js — Limpio, escalable, solo navegador
+// .js — Limpio, 
 // ============================================================
 
-// URL base del backend Apps Script (un solo endpoint)
-const API_URL = "https://script.google.com/macros/s/AKfycbzP04DM6clsY4oUASPu3HDRLdFlsjk4EwORNVcYMlC4hNPaPr2W4KsUGNOoecXJIUCr/exec";
-console.log("SCRIPT VGV CARGADO — API:", API_URL);
+// ============================================================
+// VARIABLES GLOBALES
+// ============================================================
 
-// Variables globales
 let usuarioActivo = null;
 let fotoBase64 = null;
-
-// ============================================================
-// INDEXEDDB — MODO OFFLINE
-// ============================================================
-
-let db;
-const DB_NAME = "vgv_entregas";
-const STORE_NAME = "pendientes";
-
-function initDB() {
-  const request = indexedDB.open(DB_NAME, 1);
-
-  request.onupgradeneeded = e => {
-    db = e.target.result;
-    if (!db.objectStoreNames.contains(STORE_NAME)) {
-      db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
-    }
-  };
-
-  request.onsuccess = e => { db = e.target.result; };
-  request.onerror = e => console.error("IndexedDB error:", e);
-}
-
-initDB();
-
-function guardarEntregaOffline(data) {
-  return new Promise(resolve => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).add({
-      ...data,
-      estadoEnvio: "pendiente",
-      fechaGuardado: Date.now()
-    });
-    tx.oncomplete = () => resolve(true);
-  });
-}
-
-function obtenerPendientes() {
-  return new Promise(resolve => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const req = tx.objectStore(STORE_NAME).getAll();
-    req.onsuccess = () => resolve(req.result);
-  });
-}
-
-function eliminarPendiente(id) {
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  tx.objectStore(STORE_NAME).delete(id);
-}
-
-window.addEventListener("online", reenviarPendientes);
-
-// ============================================================
-// UTILIDADES
-// ============================================================
-
-function hayInternet() {
-  return navigator.onLine;
-}
-
-// Comprime imagen a partir de base64
-async function compressImage(base64, maxWidth = 1200, quality = 0.7) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-
-      const targetWidth = Math.min(maxWidth, img.width);
-      const scale = targetWidth / img.width;
-
-      canvas.width = targetWidth;
-      canvas.height = img.height * scale;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.src = base64;
-  });
-}
 
 // ============================================================
 // LOGIN
 // ============================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  const sesion = sessionStorage.getItem("vgv_usuario");
-  if (sesion) {
-    usuarioActivo = JSON.parse(sesion);
-    mostrarMenu();
-  }
+function doLogin() {
+  const user = document.getElementById("login-user").value.trim();
+  const pass = document.getElementById("login-pass").value.trim();
+  const patente = document.getElementById("patente").value.trim();
 
-  document.getElementById("login-pass").addEventListener("keydown", e => {
-    if (e.key === "Enter") doLogin();
-  });
-
-  document.querySelectorAll(".estado-box").forEach(box => {
-    box.addEventListener("click", () => {
-      document.querySelectorAll(".estado-box")
-        .forEach(b => b.classList.remove("selected"));
-
-      box.classList.add("selected");
-      document.getElementById("estado").value = box.dataset.value;
-    });
-  });
-});
-// login maneja autenticación, guarda datos en localStorage y muestra menú principal
-async function doLogin() {
-  const usuario = document.getElementById("login-user").value.trim().toLowerCase();
-  const clave = document.getElementById("login-pass").value;
-  const errorEl = document.getElementById("login-error");
-  const btn = document.querySelector("#screen-login .btn-primary");
-
-  if (!usuario || !clave) {
-    errorEl.textContent = "Ingresa tu usuario y contraseña.";
-    errorEl.classList.remove("hidden");
+  if (!user || !pass || !patente) {
+    document.getElementById("login-error").classList.remove("hidden");
     return;
   }
 
-  btn.textContent = "Verificando...";
-  btn.disabled = true;
-  errorEl.classList.add("hidden");
+  // Simulación de usuarios
+  const usuarios = {
+    "juan.rodriguez": { nombre: "Juan Rodríguez", rol: "Repartidor" },
+    "nicolas.alvarez": { nombre: "Nicolás Álvarez", rol: "Repartidor" },
+    "admin": { nombre: "Administrador", rol: "Admin" }
+  };
 
-  // Guardar patente ANTES del login
-  const patente = document.getElementById("patente").value.trim();
-  localStorage.setItem("patente", patente);
-
-  try {
-    const payload = {
-      accion: "login",
-      usuario,
-      password: clave
-    };
-
-    const resp = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(JSON.stringify(payload))
-    });
-
-    const data = await resp.json(); // ← AQUÍ recién existe "data"
-
-    if (!data.ok) {
-      errorEl.textContent = data.error || "Usuario o contraseña inválidos";
-      errorEl.classList.remove("hidden");
-      btn.textContent = "Ingresar";
-      btn.disabled = false;
-      return;
-    }
-
-    // Guardar datos del usuario AHORA que "data" existe
-    localStorage.setItem("usuario", data.usuario.nombre);
-    localStorage.setItem("rol", data.usuario.rol);
-
-    usuarioActivo = data.usuario;
-    mostrarMenu();
-
-  } catch (err) {
-    console.error("Error_en_login:", err);
-    errorEl.textContent = "Error de conexión. Intenta nuevamente.";
-    errorEl.classList.remove("hidden");
+  if (!usuarios[user] || pass !== "1234") {
+    document.getElementById("login-error").classList.remove("hidden");
+    return;
   }
 
-  btn.textContent = "Ingresar";
-  btn.disabled = false;
-}
+  usuarioActivo = usuarios[user];
+  localStorage.setItem("patente", patente);
 
-// doLogout limpia sesión y vuelve a pantalla de login
-function doLogout() {
-  sessionStorage.removeItem("vgv_usuario");
-  usuarioActivo = null;
-  showScreen("screen-login");
-  document.getElementById("login-user").value = "";
-  document.getElementById("login-pass").value = "";
+  mostrarMenu();
 }
 
 // ============================================================
@@ -215,7 +70,6 @@ function mostrarMenu() {
   document.getElementById("menu-fecha").innerHTML =
     `${ahora.toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" })}<br>${ahora.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
 
-  actualizarBadgePendientes();
   showScreen("screen-menu");
 }
 
@@ -234,24 +88,25 @@ function goBack(destino) {
     showScreen("screen-" + destino);
   }
 }
+
+// ============================================================
+// ESTADO DE ENTREGA
+// ============================================================
+
 function activarSeleccionEstado() {
   document.querySelectorAll(".estado-box").forEach(box => {
     box.onclick = () => {
-
       document.querySelectorAll(".estado-box")
         .forEach(b => b.classList.remove("selected"));
 
       box.classList.add("selected");
-
       document.getElementById("estado").value = box.dataset.value;
-
-      console.log("Estado seleccionado:", box.dataset.value);
     };
   });
 }
 
 // ============================================================
-// MÓDULO ENTREGAS
+// FORMULARIO ENTREGAS
 // ============================================================
 
 function resetFormEntregas() {
@@ -259,6 +114,7 @@ function resetFormEntregas() {
 
   document.getElementById("guia-numero").value = "";
   document.getElementById("estado").value = "";
+  document.getElementById("tipoDocumento").value = "";
 
   document.querySelectorAll(".estado-box").forEach(b => b.classList.remove("selected"));
 
@@ -289,6 +145,10 @@ setInterval(() => {
   }
 }, 30000);
 
+// ============================================================
+// FOTO
+// ============================================================
+
 function triggerCamera() {
   document.getElementById("camera-input").click();
 }
@@ -299,8 +159,7 @@ function handlePhoto(event) {
 
   const reader = new FileReader();
   reader.onload = async e => {
-    const originalBase64 = e.target.result;
-    fotoBase64 = await compressImage(originalBase64);
+    fotoBase64 = e.target.result;
 
     const preview = document.getElementById("photo-preview");
     preview.src = fotoBase64;
@@ -320,31 +179,50 @@ function retakePhoto() {
   document.getElementById("photo-placeholder").style.display = "flex";
   document.getElementById("btn-retake").style.display = "none";
 }
+
 // ============================================================
-// ENVÍO DE ENTREGA (ONLINE + OFFLINE) — VERSIÓN FINAL
+// TIPO DE DOCUMENTO
+// ============================================================
+
+function seleccionarTipo(tipo) {
+  document.getElementById("tipoDocumento").value = tipo;
+
+  document.querySelectorAll(".btn-tipo-doc").forEach(btn => {
+    btn.classList.remove("selected");
+  });
+
+  if (tipo === "guia") {
+    document.querySelector(".btn-tipo-doc.guia").classList.add("selected");
+  } else {
+    document.querySelector(".btn-tipo-doc.factura").classList.add("selected");
+  }
+}
+
+// ============================================================
+// ENVÍO DE ENTREGA
 // ============================================================
 
 async function submitEntrega() {
   const guia = document.getElementById("guia-numero").value.trim();
   const estado = document.getElementById("estado").value;
+  const tipoDocumento = document.getElementById("tipoDocumento").value;
 
+  if (!tipoDocumento) {
+    alert("Selecciona si es guía o factura.");
+    return;
+  }
   if (!guia) {
-    alert("Por favor ingresa el número de guía.");
+    alert("Ingresa el número de documento.");
     return;
   }
   if (!fotoBase64) {
-    alert("Por favor toma o sube la foto.");
+    alert("Toma o sube la foto.");
     return;
   }
   if (!estado) {
-    alert("Por favor selecciona el estado de la entrega.");
+    alert("Selecciona el estado de la entrega.");
     return;
   }
-  const tipoDocumento = document.getElementById("tipoDocumento").value;
-if (!tipoDocumento) {
-  alert("Por favor selecciona si es guía o factura.");
-  return;
-}
 
   const payload = {
     accion: "registrarEntrega",
@@ -367,107 +245,25 @@ if (!tipoDocumento) {
   status.textContent = "⏳ Guardando...";
   status.classList.remove("hidden");
 
-  // ---------------------------
-  // MODO OFFLINE
-  // ---------------------------
-  if (!hayInternet()) {
-    await guardarEntregaOffline(payload);
-    mostrarExito(guia);
-    actualizarBadgePendientes();
-    return;
-  }
-
-  // ---------------------------
-  // MODO ONLINE
-  // ---------------------------
   try {
-    const resp = await fetch(API_URL, {
+    const res = await fetch("TU_URL_DE_APPS_SCRIPT", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(JSON.stringify(payload))
+      body: JSON.stringify(payload)
     });
 
-    const data = await resp.json();
+    const data = await res.json();
 
     if (data.ok) {
-      mostrarExito(guia);
+      document.getElementById("exito-guia").textContent = guia;
+      showScreen("screen-exito");
     } else {
-      throw new Error(data.error || "Error desconocido");
+      alert("Error al guardar: " + data.error);
     }
 
-  } catch (err) {
-    // Si falla el servidor → guardar offline
-    await guardarEntregaOffline(payload);
-    mostrarExito(guia);
+  } catch (e) {
+    alert("Error de conexión.");
   }
 
-  actualizarBadgePendientes();
+  btn.disabled = false;
+  btn.textContent = "Registrar entrega";
 }
-
-const tipoDocumento = document.getElementById("tipoDocumento").value;
-
-const data = {
-    accion: "registrarentrega",
-    usuario: usuario,
-    patente: patente,
-    numero: numero,
-    estado: estado,
-    foto: fotoBase64,
-    tipoDocumento: tipoDocumento
-};
-
-
-// ============================================================
-// PANTALLA DE ÉXITO
-// ============================================================
-
-function mostrarExito(guia) {
-  document.getElementById("exito-guia").textContent = "Guía N° " + guia;
-  showScreen("screen-exito");
-}
-
-// ============================================================
-// NUEVA ENTREGA
-// ============================================================
-
-function nuevaEntrega() {
-  showScreen("screen-entregas");
-  resetFormEntregas();
-}
-
-
-// ============================================================
-// BADGE DE PENDIENTES
-// ============================================================
-async function actualizarBadgePendientes() {
-  try {
-    const pendientes = await obtenerPendientes();
-    const badge = document.getElementById("badge-pendientes");
-
-    if (!badge) return;
-
-    if (pendientes.length > 0) {
-      badge.textContent = pendientes.length;
-      badge.classList.remove("hidden");
-    } else {
-      badge.classList.add("hidden");
-    }
-  } catch (err) {
-    console.error("Error al actualizar badge:", err);
-  }
-}
-function seleccionarTipo(tipo) {
-    document.getElementById("tipoDocumento").value = tipo;
-
-    document.querySelectorAll(".btn-tipo-doc").forEach(btn => {
-        btn.classList.remove("selected");
-    });
-
-    if (tipo === "guia") {
-        document.querySelector(".btn-tipo-doc.guia").classList.add("selected");
-    } else {
-        document.querySelector(".btn-tipo-doc.factura").classList.add("selected");
-    }
-}
-
-
