@@ -4,7 +4,6 @@
   margin: 0;
   padding: 0;
 }
-
 :root {
   --azul: #1A4B8C;
   --azul-dark: #0F3266;
@@ -478,7 +477,6 @@ html, body {
 .btn-tipo-doc.factura {
     background-color: #FF9800;
 }
-
 .btn-tipo-doc.selected {
     outline: 4px solid #00e676;
     transform: scale(1.03);
